@@ -2,15 +2,17 @@ from homeassistant import config_entries, core
 from typing import Any, Dict, Optional
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT
+from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_TYPE
 
 from .const import CONF_PRINTERS, DOMAIN
 
 
 CONFIG_SCHEMA = vol.Schema({
+    vol.Required(CONF_TYPE): vol.In(['flashforge_adventurer_3']),
     vol.Required(CONF_IP_ADDRESS): cv.string,
-    vol.Optional(CONF_PORT): cv.string
+    vol.Optional(CONF_PORT): cv.port,
 })
+
 
 class GithubCustomConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     data: Optional[Dict[str, Any]]
