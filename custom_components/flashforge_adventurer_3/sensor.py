@@ -33,17 +33,16 @@ class PrinterDefinition(TypedDict):
 
 
 async def async_setup_entry(
-    hass: core.HomeAssistant, entry: config_entries.ConfigEntry
+    hass: core.HomeAssistant,
+    config_entry: config_entries.ConfigEntry,
+    async_add_entities,
 ) -> bool:
-    """Set up platform from a ConfigEntry."""
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = entry.data
-
-    # Forward the setup to the sensor platform.
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, 'sensor')
-    )
-    return True
+    config = hass.data[DOMAIN][config_entry.entry_id]
+    # Update our config to include new repos and remove those that have been removed.
+    if config_entry.options:
+        config.update(config_entry.options)
+    sensors = [FlashforgeAdventurer3Sensor(printer_definition) for printer_definition in config[CONF_PRINTERS]]
+    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
 
 
 async def async_setup_platform(
@@ -53,7 +52,7 @@ async def async_setup_platform(
     discovery_info: Optional[DiscoveryInfoType] = None,
 ) -> None:
     sensors = [FlashforgeAdventurer3Sensor(printer_definition) for printer_definition in config[CONF_PRINTERS]]
-    async_add_entities([s for s in sensors], update_before_add=True)
+    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
 
 
 class FlashforgeAdventurer3Sensor(Entity):
@@ -90,9 +89,8 @@ class FlashforgeAdventurer3Sensor(Entity):
 
     @property
     def is_supported(self) -> bool:
-        return True
         # Only Adventurer 3 is supported at the moment, since this is the only printer I have.
-        # return self.type == 'flashforge_adventurer_3'
+        return self.type == 'flashforge_adventurer_3'
 
     def update(self):
         self.attrs = get_print_job_status(self.ip, self.port)
