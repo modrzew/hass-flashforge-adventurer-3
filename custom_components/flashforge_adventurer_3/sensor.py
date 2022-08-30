@@ -68,7 +68,7 @@ class FlashforgeAdventurer3Sensor(Entity):
     def __init__(self, printer_definition: PrinterDefinition) -> None:
         super().__init__()
         self.type = printer_definition['type']
-        self.ip = printer_definition['ip']
+        self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
         self._available = False
         self.attrs = {}
@@ -76,7 +76,7 @@ class FlashforgeAdventurer3Sensor(Entity):
     @property
     def name(self) -> str:
         """Return the name of the entity."""
-        return self._name
+        return f'FlashForge Adventurer 3 at {self.ip}'
 
     @property
     def unique_id(self) -> str:
@@ -97,9 +97,20 @@ class FlashforgeAdventurer3Sensor(Entity):
         return self.attrs
 
     @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return self.attrs
+
+    @property
     def is_supported(self) -> bool:
         # Only Adventurer 3 is supported at the moment, since this is the only printer I have.
         return self.type == 'flashforge_adventurer_3'
 
     def update(self):
         self.attrs = get_print_job_status(self.ip, self.port)
+        if self.attrs['online']:
+            if self.attrs['printing']:
+                self._state = 'printing'
+            else:
+                self._state = 'online'
+        else:
+            self._state = 'offline'
