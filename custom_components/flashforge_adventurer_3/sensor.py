@@ -21,7 +21,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required('type'): cv.string,
         vol.Required('ip'): cv.string,
-        vol.Required('port'): cv.int,
+        vol.Required('port'): cv.string,
     }
 )
 
