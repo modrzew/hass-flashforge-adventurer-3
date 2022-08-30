@@ -1,4 +1,5 @@
 from datetime import timedelta
+import logging
 from typing import Any, Callable, Dict, Optional, TypedDict
 
 from homeassistant import core, config_entries
@@ -15,8 +16,10 @@ import voluptuous as vol
 from .const import DOMAIN
 from .protocol import get_print_job_status
 
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+
 SCAN_INTERVAL = timedelta(minutes=1)
-CONF_PRINTERS = '3dprinters'
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required('type'): cv.string,
@@ -35,14 +38,17 @@ class PrinterDefinition(TypedDict):
 async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
-    async_add_entities,
+    async_add_entities: Callable,
 ) -> bool:
     config = hass.data[DOMAIN][config_entry.entry_id]
     # Update our config to include new repos and remove those that have been removed.
     if config_entry.options:
         config.update(config_entry.options)
-    sensors = [FlashforgeAdventurer3Sensor(printer_definition) for printer_definition in config[CONF_PRINTERS]]
-    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
+    LOGGER.debug('inside async_setup_entry')
+    LOGGER.debug(config)
+    sensor = FlashforgeAdventurer3Sensor(config)
+    if sensor.is_supported:
+        async_add_entities([sensor], update_before_add=True)
 
 
 async def async_setup_platform(
@@ -51,8 +57,11 @@ async def async_setup_platform(
     async_add_entities: Callable,
     discovery_info: Optional[DiscoveryInfoType] = None,
 ) -> None:
-    sensors = [FlashforgeAdventurer3Sensor(printer_definition) for printer_definition in config[CONF_PRINTERS]]
-    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
+    LOGGER.debug('inside async_setup_platform')
+    LOGGER.debug(config)
+    sensor = FlashforgeAdventurer3Sensor(config)
+    if sensor.is_supported:
+        async_add_entities([sensor], update_before_add=True)
 
 
 class FlashforgeAdventurer3Sensor(Entity):
