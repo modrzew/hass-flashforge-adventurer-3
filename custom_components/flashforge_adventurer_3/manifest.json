@@ -1,0 +1,11 @@
+{
+  "codeowners": ["@user"],
+  "config_flow": false,
+  "dependencies": [],
+  "documentation": "https://github.com/user/my_component/",
+  "domain": "flashforge_adventurer_3",
+  "iot_class": "cloud_polling",
+  "name": "FlashForge Adventurer 3",
+  "requirements": [],
+  "version": "1.0.0"
+}
