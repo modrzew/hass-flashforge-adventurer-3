@@ -53,7 +53,7 @@ async def async_setup_platform(
     discovery_info: Optional[DiscoveryInfoType] = None,
 ) -> None:
     sensors = [FlashforgeAdventurer3Sensor(printer_definition) for printer_definition in config[CONF_PRINTERS]]
-    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
+    async_add_entities([s for s in sensors], update_before_add=True)
 
 
 class FlashforgeAdventurer3Sensor(Entity):
@@ -90,8 +90,9 @@ class FlashforgeAdventurer3Sensor(Entity):
 
     @property
     def is_supported(self) -> bool:
+        return True
         # Only Adventurer 3 is supported at the moment, since this is the only printer I have.
-        return self.type == 'flashforge_adventurer_3'
+        # return self.type == 'flashforge_adventurer_3'
 
     def update(self):
         self.attrs = get_print_job_status(self.ip, self.port)
