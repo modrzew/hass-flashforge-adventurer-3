@@ -1,3 +1,4 @@
+import os
 import re
 import socket
 from typing import Optional, TypedDict
@@ -62,5 +63,5 @@ def get_print_job_status(ip: str, port: int) -> PrinterStatus:
 
 
 if __name__ == '__main__':
-    status = get_print_job_status('192.168.3.214', 8899)
+    status = get_print_job_status(os.environ['PRINTER_IP'], 8899)
     print(status)
