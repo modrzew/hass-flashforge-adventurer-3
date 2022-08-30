@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Any, Callable, Dict, Optional, TypedDict
 
+from homeassistant import core, config_entries
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
@@ -11,6 +12,7 @@ from homeassistant.helpers.typing import (
 )
 import voluptuous as vol
 
+from .const import DOMAIN
 from .protocol import get_print_job_status
 
 SCAN_INTERVAL = timedelta(minutes=1)
@@ -27,6 +29,21 @@ class PrinterDefinition(TypedDict):
     type: str
     ip: str
     port: int
+
+
+
+async def async_setup_entry(
+    hass: core.HomeAssistant, entry: config_entries.ConfigEntry
+) -> bool:
+    """Set up platform from a ConfigEntry."""
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = entry.data
+
+    # Forward the setup to the sensor platform.
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, 'sensor')
+    )
+    return True
 
 
 async def async_setup_platform(
