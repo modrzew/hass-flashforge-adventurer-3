@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, Optional, TypedDict
 
 import async_timeout
 from homeassistant import config_entries, core
-from homeassistant.components.mjpeg.camera import CONF_MJPEG_URL, MjpegCamera
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
@@ -21,12 +20,11 @@ from .protocol import get_print_job_status
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
-SCAN_INTERVAL = timedelta(minutes=1)
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required('type'): cv.string,
         vol.Required('ip'): cv.string,
-        vol.Required('port'): cv.string, # feel free to remove this comment
+        vol.Required('port'): cv.string,
     }
 )
 
@@ -50,7 +48,6 @@ async def async_setup_entry(
     sensors = [
         FlashforgeAdventurer3StateSensor(coordinator, config),
         FlashforgeAdventurer3ProgressSensor(coordinator, config),
-        FlashforgeAdventurer3Camera(config),
     ]
     async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
 
@@ -153,26 +150,3 @@ class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def state(self) -> Optional[str]:
         return self.attrs.get('progress', 0)
-
-
-class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, MjpegCamera):
-    def __init__(self, printer_definition: PrinterDefinition) -> None:
-        self.type = printer_definition['type']
-        self.ip = printer_definition['ip_address']
-        self.port = printer_definition['port']
-        device_info = {
-            CONF_MJPEG_URL: self.stream_url,
-        }
-        super().__init__(device_info)
-
-    @property
-    def name(self) -> str:
-        return f'{super().name} camera'
-
-    @property
-    def unique_id(self) -> str:
-        return f'{super().unique_id}_camera'
-
-    @property
-    def _stream_url(self) -> str:
-        return f'http://{self.ip}:8080/?action=stream'
