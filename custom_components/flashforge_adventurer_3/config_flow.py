@@ -3,14 +3,21 @@ from typing import Any, Dict, Optional
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.const import CONF_IP_ADDRESS, CONF_PORT, CONF_TYPE
+from homeassistant.helpers import selector
 
-from .const import CONF_PRINTERS, DOMAIN
+from .const import CONF_PRINTERS, DEFAULT_PORT, DOMAIN
 
 
 CONFIG_SCHEMA = vol.Schema({
-    vol.Required(CONF_TYPE): vol.In(['flashforge_adventurer_3']),
+    vol.Required(CONF_TYPE): selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=['flashforge_adventurer_3'],
+            mode=selector.SelectSelectorMode.DROPDOWN,
+            multiple=False,
+        ),
+    ),
     vol.Required(CONF_IP_ADDRESS): cv.string,
-    vol.Optional(CONF_PORT): cv.port,
+    vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
 })
 
 
