@@ -1,13 +1,13 @@
 from datetime import timedelta
 import logging
-from typing import Any, Callable, Dict, Optional, TypedDict, Union
+from typing import Any, Callable, Dict, Optional, TypedDict
 
 import async_timeout
 from homeassistant import config_entries, core
+from homeassistant.components.mjpeg.camera import CONF_MJPEG_URL, MjpegCamera
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.camera import Camera, SUPPORT_STREAM
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -80,6 +80,11 @@ class FlashforgeAdventurer3CommonPropertiesMixin:
     def unique_id(self) -> str:
         return f'{self.type}_{self.ip}'
 
+    @property
+    def is_supported(self) -> bool:
+        # Only Adventurer 3 is supported at the moment, since this is the only printer I have.
+        return self.type == 'flashforge_adventurer_3'
+
 
 class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin, CoordinatorEntity, Entity):
     def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
@@ -101,11 +106,6 @@ class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         return self.attrs
-
-    @property
-    def is_supported(self) -> bool:
-        # Only Adventurer 3 is supported at the moment, since this is the only printer I have.
-        return self.type == 'flashforge_adventurer_3'
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -155,12 +155,15 @@ class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
         return self.attrs.get('progress', 0)
 
 
-class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, Camera):
+class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, MjpegCamera):
     def __init__(self, printer_definition: PrinterDefinition) -> None:
-        super().__init__()
         self.type = printer_definition['type']
         self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
+        device_info = {
+            CONF_MJPEG_URL: self.stream_url,
+        }
+        super().__init__(device_info)
 
     @property
     def name(self) -> str:
@@ -171,8 +174,5 @@ class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, Ca
         return f'{super().unique_id}_camera'
 
     @property
-    def supported_features(self) -> int:
-        return SUPPORT_STREAM
-
-    async def stream_source(self) -> Union[str, None]:
+    def _stream_url(self) -> str:
         return f'http://{self.ip}:8080/?action=stream'
