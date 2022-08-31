@@ -133,6 +133,10 @@ class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
         else:
             return 'offline'
 
+    @property
+    def icon(self) -> str:
+        return 'mdi:printer-3d'
+
 
 class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
@@ -150,3 +154,7 @@ class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def state(self) -> Optional[str]:
         return self.attrs.get('progress', 0)
+
+    @property
+    def icon(self) -> str:
+        return 'mdi:percent-circle'
