@@ -2,19 +2,23 @@
 
 A custom Home Assistant integration for the FlashForge Adventurer 3 printer.
 
-TODO: add list of features
-TODO: add screenshot here
+It adds three entities:
+
+- state, together with nozzle and bed temperatures available as attributes
+- current print job's progress
+- camera feed
+
+![Example dashboard](example.png)
 
 ## Installation
 
-TODO, add it to HACS
+You can install it through [HACS](https://hacs.xyz/). Alternatively, you can
+download this repo and add it to your `custom_components` directory.
 
-## Todo
-
-- handle the printer going offline: show "offline" instead of "unavailable"
-- display strings in the config flow
-- display the list of supported printers in the config flow correctly (dropdown
-  instead of radio boxes)
+After the integration is installed, go to Settings -> Integrations, and
+configure it through the _Add integration_ button. You will need to provide the
+IP address of the printer. It might be a good idea to assign it a static IP
+address in your router settings.
 
 ## More printers?
 

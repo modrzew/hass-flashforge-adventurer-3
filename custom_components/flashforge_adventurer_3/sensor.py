@@ -158,3 +158,7 @@ class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def icon(self) -> str:
         return 'mdi:percent-circle'
+
+    @property
+    def unit_of_measurement(self) -> str:
+        return '%'
