@@ -1,4 +1,4 @@
-from homeassistant import config_entries, core
+from homeassistant import config_entries
 from typing import Any, Dict, Optional
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol

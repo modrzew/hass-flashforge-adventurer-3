@@ -2,14 +2,21 @@ from datetime import timedelta
 import logging
 from typing import Any, Callable, Dict, Optional, TypedDict
 
-from homeassistant import core, config_entries
+import async_timeout
+from homeassistant import config_entries, core
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
+from homeassistant.core import callback
 from homeassistant.helpers.typing import (
     ConfigType,
     DiscoveryInfoType,
     HomeAssistantType,
+)
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+    UpdateFailed,
 )
 import voluptuous as vol
 
@@ -44,29 +51,43 @@ async def async_setup_entry(
     # Update our config to include new repos and remove those that have been removed.
     if config_entry.options:
         config.update(config_entry.options)
-    LOGGER.debug('inside async_setup_entry')
-    LOGGER.debug(config)
-    sensor = FlashforgeAdventurer3Sensor(config)
-    if sensor.is_supported:
+    coordinator = FlashforgeAdventurer3Coordinator(hass, config)
+    await coordinator.async_config_entry_first_refresh()
+    sensor = FlashforgeAdventurer3Sensor(coordinator, config)
+    if sensor.is_supported: 
         async_add_entities([sensor], update_before_add=True)
 
 
-async def async_setup_platform(
-    hass: HomeAssistantType,
-    config: ConfigType,
-    async_add_entities: Callable,
-    discovery_info: Optional[DiscoveryInfoType] = None,
-) -> None:
-    LOGGER.debug('inside async_setup_platform')
-    LOGGER.debug(config)
-    sensor = FlashforgeAdventurer3Sensor(config)
-    if sensor.is_supported:
-        async_add_entities([sensor], update_before_add=True)
+# async def async_setup_platform(
+#     hass: HomeAssistantType,
+#     config: ConfigType,
+#     async_add_entities: Callable,
+#     discovery_info: Optional[DiscoveryInfoType] = None,
+# ) -> None:
+#     sensor = FlashforgeAdventurer3Sensor(config)
+#     if sensor.is_supported:
+#         async_add_entities([sensor], update_before_add=True)
 
 
-class FlashforgeAdventurer3Sensor(Entity):
-    def __init__(self, printer_definition: PrinterDefinition) -> None:
-        super().__init__()
+class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
+    def __init__(self, hass, printer_definition: PrinterDefinition):
+        super().__init__(
+            hass,
+            LOGGER,
+            name='My sensor',
+            update_interval=timedelta(seconds=60),
+        )
+        self.ip = printer_definition['ip_address']
+        self.port = printer_definition['port']
+
+    async def _async_update_data(self):
+        async with async_timeout.timeout(5):
+            return await get_print_job_status(self.ip, self.port)
+
+
+class FlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
+    def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
+        super().__init__(coordinator)
         self.type = printer_definition['type']
         self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
@@ -76,7 +97,7 @@ class FlashforgeAdventurer3Sensor(Entity):
     @property
     def name(self) -> str:
         """Return the name of the entity."""
-        return f'FlashForge Adventurer 3 at {self.ip}'
+        return f'FlashForge Adventurer 3'
 
     @property
     def unique_id(self) -> str:
@@ -105,8 +126,9 @@ class FlashforgeAdventurer3Sensor(Entity):
         # Only Adventurer 3 is supported at the moment, since this is the only printer I have.
         return self.type == 'flashforge_adventurer_3'
 
-    def update(self):
-        self.attrs = get_print_job_status(self.ip, self.port)
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self.attrs = self.coordinator.data[self.idx]['state']
         if self.attrs['online']:
             if self.attrs['printing']:
                 self._state = 'printing'
@@ -114,3 +136,4 @@ class FlashforgeAdventurer3Sensor(Entity):
                 self._state = 'online'
         else:
             self._state = 'offline'
+        self.async_write_ha_state()

@@ -1,8 +1,8 @@
+import asyncio
+from codecs import StreamReader, StreamWriter
 import os
 import re
-import socket
-from typing import Optional, TypedDict
-
+from typing import Optional, Tuple, TypedDict
 
 BUFFER_SIZE = 1024
 TIMEOUT_SECONDS = 5
@@ -23,29 +23,30 @@ class PrinterStatus(TypedDict):
     desired_nozzle_temperature: Optional[int]
 
 
-def open_socket(ip_address: str, port: int):
-    printer_socket = socket.socket()
-    printer_socket.settimeout(TIMEOUT_SECONDS)
-    printer_socket.connect((ip_address, port))
-    return printer_socket
-
-
-def send_msg(socket, payload):
+async def send_msg(reader: StreamReader, writer: StreamWriter, payload: str):
     msg = f'{payload}\r\n'
-    socket.send(msg.encode())
-    result = socket.recv(BUFFER_SIZE)
+    writer.write(msg.encode())
+    await writer.drain()
+    result = await reader.read(BUFFER_SIZE)
     return result.decode()
 
 
-def get_print_job_status(ip: str, port: int) -> PrinterStatus:
+async def collect_data(ip: str, port: int) -> Tuple[PrinterStatus, Optional[str], Optional[str]]:
+    future = asyncio.open_connection(ip, port)
     try:
-        printer_socket = open_socket(ip, port)
-    except (socket.timeout, OSError):
-        return { 'online': False }
+        reader, writer = await asyncio.wait_for(future, timeout=TIMEOUT_SECONDS)
+    except (asyncio.TimeoutError, OSError):
+        return { 'online': False }, None, None
     response: PrinterStatus = { 'online': True }
-    send_msg(printer_socket, STATUS_COMMAND)
-    print_job_info = send_msg(printer_socket, PRINT_JOB_INFO_COMMAND)
-    temperature_info = send_msg(printer_socket, TEMPERATURE_COMMAND)
+    await send_msg(reader, writer, STATUS_COMMAND)
+    print_job_info = await send_msg(reader, writer, PRINT_JOB_INFO_COMMAND)
+    temperature_info = await send_msg(reader, writer, TEMPERATURE_COMMAND)
+    writer.close()
+    await writer.wait_closed()
+    return response, print_job_info, temperature_info
+
+
+def parse_data(response: PrinterStatus, print_job_info: str, temperature_info: str) -> PrinterStatus:
     print_job_info_match = STATUS_REPLY_REGEX.match(print_job_info)
     if print_job_info_match:
         response['progress'] = int(print_job_info_match.group(1))
@@ -54,7 +55,7 @@ def get_print_job_status(ip: str, port: int) -> PrinterStatus:
         # Printer is printing if desired temperatures are greater than zero. If not, it's paused.
         desired_nozzle_temperature = int(temperature_match.group(2))
         desired_bed_temperature = int(temperature_match.group(4))
-        response['printing'] = desired_nozzle_temperature and desired_bed_temperature
+        response['printing'] = bool(desired_nozzle_temperature and desired_bed_temperature)
         response['nozzle_temperature'] = int(temperature_match.group(1))
         response['desired_nozzle_temperature'] = desired_nozzle_temperature
         response['bed_temperature'] = int(temperature_match.group(3))
@@ -62,6 +63,13 @@ def get_print_job_status(ip: str, port: int) -> PrinterStatus:
     return response
 
 
+async def get_print_job_status(ip: str, port: int) -> PrinterStatus:
+    response, print_job_info, temperature_info = await collect_data(ip, port)
+    if not response['online']:
+        return response
+    return parse_data(response, print_job_info, temperature_info)
+
+
 if __name__ == '__main__':
-    status = get_print_job_status(os.environ['PRINTER_IP'], 8899)
+    status = asyncio.run(get_print_job_status(os.environ['PRINTER_IP'], 8899))
     print(status)
