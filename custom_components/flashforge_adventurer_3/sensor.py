@@ -5,18 +5,12 @@ from typing import Any, Callable, Dict, Optional, TypedDict
 import async_timeout
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import PLATFORM_SCHEMA
+from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
-from homeassistant.core import callback
-from homeassistant.helpers.typing import (
-    ConfigType,
-    DiscoveryInfoType,
-    HomeAssistantType,
-)
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
     DataUpdateCoordinator,
-    UpdateFailed,
 )
 import voluptuous as vol
 
@@ -53,9 +47,11 @@ async def async_setup_entry(
         config.update(config_entry.options)
     coordinator = FlashforgeAdventurer3Coordinator(hass, config)
     await coordinator.async_config_entry_first_refresh()
-    sensor = FlashforgeAdventurer3Sensor(coordinator, config)
-    if sensor.is_supported: 
-        async_add_entities([sensor], update_before_add=True)
+    sensors = [
+        FlashforgeAdventurer3StateSensor(coordinator, config),
+        FlashforgeAdventurer3ProgressSensor(coordinator, config),
+    ]
+    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
 
 
 # async def async_setup_platform(
@@ -85,7 +81,7 @@ class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
             return await get_print_job_status(self.ip, self.port)
 
 
-class FlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
+class BaseFlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
     def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
         super().__init__(coordinator)
         self.type = printer_definition['type']
@@ -96,18 +92,11 @@ class FlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
 
     @property
     def name(self) -> str:
-        """Return the name of the entity."""
         return f'FlashForge Adventurer 3'
 
     @property
     def unique_id(self) -> str:
-        """Return the unique ID of the sensor."""
         return f'{self.type}_{self.ip}:{self.port}'
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return bool(self.attrs.get('online'))
 
     @property
     def state(self) -> Optional[str]:
@@ -128,12 +117,47 @@ class FlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        self.attrs = self.coordinator.data[self.idx]['state']
+        self.attrs = self.coordinator.data
+        self.async_write_ha_state()
+
+
+class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
+    @property
+    def name(self) -> str:
+        return f'{super(self).unique_id} state'
+
+    @property
+    def unique_id(self) -> str:
+        return f'{super(self).unique_id}_state'
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def state(self) -> Optional[str]:
         if self.attrs['online']:
             if self.attrs['printing']:
-                self._state = 'printing'
+                return 'printing'
             else:
-                self._state = 'online'
+                return 'online'
         else:
-            self._state = 'offline'
-        self.async_write_ha_state()
+            return 'offline'
+
+
+class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
+    @property
+    def name(self) -> str:
+        return f'{super(self).unique_id} progress'
+
+    @property
+    def unique_id(self) -> str:
+        return f'{super(self).unique_id}_progress'
+
+    @property
+    def available(self) -> bool:
+        return bool(self.attrs.get('online'))
+
+    @property
+    def state(self) -> Optional[str]:
+        return self.attrs.get('progress', 0)
