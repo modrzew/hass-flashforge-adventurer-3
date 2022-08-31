@@ -1,12 +1,13 @@
 from datetime import timedelta
 import logging
-from typing import Any, Callable, Dict, Optional, TypedDict
+from typing import Any, Callable, Dict, Optional, TypedDict, Union
 
 import async_timeout
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
+from homeassistant.components.camera import Camera, SUPPORT_STREAM
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -50,6 +51,7 @@ async def async_setup_entry(
     sensors = [
         FlashforgeAdventurer3StateSensor(coordinator, config),
         FlashforgeAdventurer3ProgressSensor(coordinator, config),
+        FlashforgeAdventurer3Camera(coordinator, config),
     ]
     async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
 
@@ -150,3 +152,24 @@ class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def state(self) -> Optional[str]:
         return self.attrs.get('progress', 0)
+
+
+class FlashforgeAdventurer3Camera(BaseFlashforgeAdventurer3Sensor, Camera):
+    @property
+    def name(self) -> str:
+        return f'{super().name} camera'
+
+    @property
+    def unique_id(self) -> str:
+        return f'{super().unique_id}_camera'
+
+    @property
+    def available(self) -> bool:
+        return bool(self.attrs.get('online'))
+
+    @property
+    def supported_features(self) -> int:
+        return SUPPORT_STREAM
+
+    async def stream_source(self) -> Union[str, None]:
+        return f'http://{self.ip}:8080/?action=stream'
