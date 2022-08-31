@@ -54,17 +54,6 @@ async def async_setup_entry(
     async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
 
 
-# async def async_setup_platform(
-#     hass: HomeAssistantType,
-#     config: ConfigType,
-#     async_add_entities: Callable,
-#     discovery_info: Optional[DiscoveryInfoType] = None,
-# ) -> None:
-#     sensor = FlashforgeAdventurer3Sensor(config)
-#     if sensor.is_supported:
-#         async_add_entities([sensor], update_before_add=True)
-
-
 class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
     def __init__(self, hass, printer_definition: PrinterDefinition):
         super().__init__(
@@ -96,7 +85,7 @@ class BaseFlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
 
     @property
     def unique_id(self) -> str:
-        return f'{self.type}_{self.ip}:{self.port}'
+        return f'{self.type}_{self.ip}'
 
     @property
     def state(self) -> Optional[str]:
@@ -124,11 +113,11 @@ class BaseFlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
 class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def name(self) -> str:
-        return f'{super(self).unique_id} state'
+        return f'{super().name} state'
 
     @property
     def unique_id(self) -> str:
-        return f'{super(self).unique_id}_state'
+        return f'{super().unique_id}_state'
 
     @property
     def available(self) -> bool:
@@ -136,8 +125,8 @@ class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
 
     @property
     def state(self) -> Optional[str]:
-        if self.attrs['online']:
-            if self.attrs['printing']:
+        if self.attrs.get('online'):
+            if self.attrs.get('printing'):
                 return 'printing'
             else:
                 return 'online'
@@ -148,11 +137,11 @@ class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
 class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def name(self) -> str:
-        return f'{super(self).unique_id} progress'
+        return f'{super().name} progress'
 
     @property
     def unique_id(self) -> str:
-        return f'{super(self).unique_id}_progress'
+        return f'{super().unique_id}_progress'
 
     @property
     def available(self) -> bool:
