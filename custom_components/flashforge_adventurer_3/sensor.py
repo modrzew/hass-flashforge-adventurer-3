@@ -36,7 +36,6 @@ class PrinterDefinition(TypedDict):
     port: int
 
 
-
 async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
@@ -51,7 +50,7 @@ async def async_setup_entry(
     sensors = [
         FlashforgeAdventurer3StateSensor(coordinator, config),
         FlashforgeAdventurer3ProgressSensor(coordinator, config),
-        FlashforgeAdventurer3Camera(coordinator, config),
+        FlashforgeAdventurer3Camera(config),
     ]
     async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
 
@@ -72,15 +71,7 @@ class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
             return await get_print_job_status(self.ip, self.port)
 
 
-class BaseFlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
-    def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
-        super().__init__(coordinator)
-        self.type = printer_definition['type']
-        self.ip = printer_definition['ip_address']
-        self.port = printer_definition['port']
-        self._available = False
-        self.attrs = {}
-
+class FlashforgeAdventurer3CommonPropertiesMixin:
     @property
     def name(self) -> str:
         return f'FlashForge Adventurer 3'
@@ -88,6 +79,16 @@ class BaseFlashforgeAdventurer3Sensor(CoordinatorEntity, Entity):
     @property
     def unique_id(self) -> str:
         return f'{self.type}_{self.ip}'
+
+
+class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin, CoordinatorEntity, Entity):
+    def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
+        super().__init__(coordinator)
+        self.type = printer_definition['type']
+        self.ip = printer_definition['ip_address']
+        self.port = printer_definition['port']
+        self._available = False
+        self.attrs = {}
 
     @property
     def state(self) -> Optional[str]:
@@ -154,7 +155,13 @@ class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
         return self.attrs.get('progress', 0)
 
 
-class FlashforgeAdventurer3Camera(BaseFlashforgeAdventurer3Sensor, Camera):
+class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, Camera):
+    def __init__(self, printer_definition: PrinterDefinition) -> None:
+        super().__init__()
+        self.type = printer_definition['type']
+        self.ip = printer_definition['ip_address']
+        self.port = printer_definition['port']
+
     @property
     def name(self) -> str:
         return f'{super().name} camera'
@@ -162,10 +169,6 @@ class FlashforgeAdventurer3Camera(BaseFlashforgeAdventurer3Sensor, Camera):
     @property
     def unique_id(self) -> str:
         return f'{super().unique_id}_camera'
-
-    @property
-    def available(self) -> bool:
-        return bool(self.attrs.get('online'))
 
     @property
     def supported_features(self) -> int:
