@@ -1,5 +1,7 @@
 {
   "name": "FlashForge Adventurer 3",
   "render_readme": true,
-  "iot_class": "cloud_polling"
+  "iot_class": "cloud_polling",
+  "homeassistant": "2022.6",
+  "hacs": "1.26"
 }
