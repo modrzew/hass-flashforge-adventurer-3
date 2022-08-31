@@ -8,7 +8,7 @@ It adds three entities:
 - current print job's progress
 - camera feed
 
-![Example dashboard](example.png)
+<img src="example.png" alt="Example dashboard" width="800"/>
 
 ## Installation
 
