@@ -11,12 +11,8 @@ TODO, add it to HACS
 
 ## Todo
 
-- expose camera stream as an entity
-- expose progress as an entity
-  - maybe all the temperatures as well?
 - handle the printer going offline: show "offline" instead of "unavailable"
 - display strings in the config flow
-- delete the option flow
 - display the list of supported printers in the config flow correctly (dropdown
   instead of radio boxes)
 

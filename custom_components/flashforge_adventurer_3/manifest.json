@@ -1,8 +1,8 @@
 {
-  "codeowners": ["@user"],
+  "codeowners": ["@modrzew"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/user/my_component/",
+  "documentation": "https://github.com/modrzew/hass-flashforge-adventurer-3/",
   "domain": "flashforge_adventurer_3",
   "iot_class": "cloud_polling",
   "name": "FlashForge Adventurer 3",
