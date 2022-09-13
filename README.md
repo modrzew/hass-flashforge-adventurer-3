@@ -20,6 +20,14 @@ configure it through the _Add integration_ button. You will need to provide the
 IP address of the printer. It might be a good idea to assign it a static IP
 address in your router settings.
 
-## More printers?
+## Printer compatibility
 
-I only own the Adventurer 3 at the moment, so that's the only supported printer.
+I own the Adventurer 3 printer at the moment, so that's the model which is 100%
+supported. There are reports of other users trying this integration with other
+FlashForge printers:
+
+| Printer | Notes |
+| - | - |
+| FlashForge Adventurer 3 | supported |
+| FlashForge Adventurer 4 | seems to work ([related issue](https://github.com/modrzew/hass-flashforge-adventurer-3/issues/1)) |
+| FlashForge Adventurer 3X | doesn't work ([related issue](https://github.com/modrzew/hass-flashforge-adventurer-3/issues/2)) |
