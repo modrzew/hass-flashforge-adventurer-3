@@ -22,14 +22,12 @@ LOGGER.setLevel(logging.DEBUG)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required('type'): cv.string,
         vol.Required('ip'): cv.string,
         vol.Required('port'): cv.string,
     }
 )
 
 class PrinterDefinition(TypedDict):
-    type: str
     ip: str
     port: int
 
@@ -48,7 +46,7 @@ async def async_setup_entry(
         FlashforgeAdventurer3StateSensor(coordinator, config),
         FlashforgeAdventurer3ProgressSensor(coordinator, config),
     ]
-    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
+    async_add_entities(sensors, update_before_add=True)
 
 
 class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
@@ -74,18 +72,12 @@ class FlashforgeAdventurer3CommonPropertiesMixin:
 
     @property
     def unique_id(self) -> str:
-        return f'{self.type}_{self.ip}'
-
-    @property
-    def is_supported(self) -> bool:
-        # Only Adventurer 3 is supported at the moment, since this is the only printer I have.
-        return self.type == 'flashforge_adventurer_3'
+        return f'flashforge_adventurer_3_{self.ip}'
 
 
 class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin, CoordinatorEntity, Entity):
     def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
         super().__init__(coordinator)
-        self.type = printer_definition['type']
         self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
         self._available = False

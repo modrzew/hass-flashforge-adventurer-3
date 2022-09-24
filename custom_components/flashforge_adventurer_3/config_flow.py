@@ -9,13 +9,6 @@ from .const import CONF_PRINTERS, DEFAULT_PORT, DOMAIN
 
 
 CONFIG_SCHEMA = vol.Schema({
-    vol.Required(CONF_TYPE): selector.SelectSelector(
-        selector.SelectSelectorConfig(
-            options=['flashforge_adventurer_3'],
-            mode=selector.SelectSelectorMode.DROPDOWN,
-            multiple=False,
-        ),
-    ),
     vol.Required(CONF_IP_ADDRESS): cv.string,
     vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
 })
