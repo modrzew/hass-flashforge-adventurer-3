@@ -30,4 +30,4 @@ FlashForge printers:
 | - | - |
 | FlashForge Adventurer 3 | supported |
 | FlashForge Adventurer 4 | seems to work ([related issue](https://github.com/modrzew/hass-flashforge-adventurer-3/issues/1)) |
-| FlashForge Adventurer 3X | doesn't work ([related issue](https://github.com/modrzew/hass-flashforge-adventurer-3/issues/2)) |
+| FlashForge Adventurer 3X | seems to work ([related issue](https://github.com/modrzew/hass-flashforge-adventurer-3/issues/2)) |
