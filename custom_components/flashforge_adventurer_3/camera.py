@@ -26,7 +26,7 @@ async def async_setup_entry(
     sensors = [
         FlashforgeAdventurer3Camera(config),
     ]
-    async_add_entities([s for s in sensors if s.is_supported], update_before_add=True)
+    async_add_entities(sensors, update_before_add=True)
 
 
 class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, MjpegCamera):
