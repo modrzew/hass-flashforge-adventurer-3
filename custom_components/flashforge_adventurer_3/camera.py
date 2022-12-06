@@ -31,7 +31,6 @@ async def async_setup_entry(
 
 class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, MjpegCamera):
     def __init__(self, printer_definition: PrinterDefinition) -> None:
-        self.type = printer_definition['type']
         self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
         super().__init__(name=self.name, mjpeg_url=self.stream_url, still_image_url=None)
