@@ -18,7 +18,6 @@ from .const import DOMAIN
 from .protocol import get_print_job_status
 
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
