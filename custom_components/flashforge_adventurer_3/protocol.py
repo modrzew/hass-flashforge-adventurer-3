@@ -1,8 +1,11 @@
 import asyncio
 from codecs import StreamReader, StreamWriter
+import logging
 import os
 import re
 from typing import Optional, Tuple, TypedDict
+
+logger = logging.getLogger(__name__)
 
 BUFFER_SIZE = 1024
 TIMEOUT_SECONDS = 5
@@ -26,8 +29,10 @@ class PrinterStatus(TypedDict):
 async def send_msg(reader: StreamReader, writer: StreamWriter, payload: str):
     msg = f'{payload}\r\n'
     writer.write(msg.encode())
+    logger.debug(f'Sent "{payload}" to the printer')
     await writer.drain()
     result = await reader.read(BUFFER_SIZE)
+    logger.debug(f'Response from the printer: {result}')
     return result.decode()
 
 
