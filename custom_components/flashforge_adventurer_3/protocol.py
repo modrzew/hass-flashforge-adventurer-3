@@ -13,8 +13,8 @@ STATUS_COMMAND = '~M601 S1'
 PRINT_JOB_INFO_COMMAND = '~M27'
 TEMPERATURE_COMMAND = '~M105'
 
-STATUS_REPLY_REGEX = re.compile('CMD M27 Received.\r\n\w+ printing byte (\d+)/100\r\nok\r\n')
-TEMPERATURE_REPLY_REGEX = re.compile('CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\nok\r\n')
+STATUS_REPLY_REGEX = re.compile('CMD M27 Received.\r\n\w+ printing byte (\d+)/100\r\n(.*?)ok\r\n')
+TEMPERATURE_REPLY_REGEX = re.compile('CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\n(.*?)ok\r\n')
 
 class PrinterStatus(TypedDict):
     online: bool
