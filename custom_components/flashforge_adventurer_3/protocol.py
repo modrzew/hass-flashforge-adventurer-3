@@ -13,7 +13,7 @@ STATUS_COMMAND = '~M601 S1'
 PRINT_JOB_INFO_COMMAND = '~M27'
 TEMPERATURE_COMMAND = '~M105'
 
-STATUS_REPLY_REGEX = re.compile('CMD M27 Received.\r\n\w+ printing byte (\d+)/100\r\n(.*?)ok\r\n')
+STATUS_REPLY_REGEX = re.compile('CMD M27 Received.\r\n\w+ printing byte (\d+)/(\d+)\r\n(.*?)ok\r\n')
 TEMPERATURE_REPLY_REGEX = re.compile('CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\n(.*?)ok\r\n')
 
 class PrinterStatus(TypedDict):
@@ -54,7 +54,9 @@ async def collect_data(ip: str, port: int) -> Tuple[PrinterStatus, Optional[str]
 def parse_data(response: PrinterStatus, print_job_info: str, temperature_info: str) -> PrinterStatus:
     print_job_info_match = STATUS_REPLY_REGEX.match(print_job_info)
     if print_job_info_match:
-        response['progress'] = int(print_job_info_match.group(1))
+        current = int(print_job_info_match.group(1))
+        total = int(print_job_info_match.group(2))
+        response['progress'] = int(current / total * 100)
     temperature_match = TEMPERATURE_REPLY_REGEX.match(temperature_info)
     if temperature_match:
         # Printer is printing if desired temperatures are greater than zero. If not, it's paused.
