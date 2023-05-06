@@ -1,14 +1,12 @@
-# FlashForge Adventurer 3 for Home Assistant
+# FlashForge Adventurer 4 for Home Assistant
 
-A custom Home Assistant integration for the FlashForge Adventurer 3 printer.
+A fork of Adventurer 3 integration adjusted for the FlashForge Adventurer 4 printer.
 
 It adds three entities:
 
 - state, together with nozzle and bed temperatures available as attributes
 - current print job's progress
 - camera feed
-
-<img src="https://raw.githubusercontent.com/modrzew/hass-flashforge-adventurer-3/master/example.png" alt="Example dashboard" width="800"/>
 
 ## Installation
 
@@ -22,12 +20,6 @@ address in your router settings.
 
 ## Printer compatibility
 
-I own the Adventurer 3 printer at the moment, so that's the model which is 100%
-supported. There are reports of other users trying this integration with other
-FlashForge printers:
+I noticed that my Adventurer 4 provides layers in addition to progress in percent.
+Modified it to collect this information and also to match regex to fix missing progress in original integration.
 
-| Printer | Notes |
-| - | - |
-| FlashForge Adventurer 3 | supported |
-| FlashForge Adventurer 4 | seems to work ([related issue](https://github.com/modrzew/hass-flashforge-adventurer-3/issues/1)) |
-| FlashForge Adventurer 3X | seems to work ([related issue](https://github.com/modrzew/hass-flashforge-adventurer-3/issues/2)) |
