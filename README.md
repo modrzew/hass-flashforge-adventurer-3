@@ -1,5 +1,5 @@
 # FlashForge Adventurer 4 for Home Assistant
-[![Paypal-shiel]](https://www.paypal.com/donate/?business=UZ6F4WY9P5MFY&no_recurring=0&item_name=Please+donate+if+you+like+my+work.&currency_code=AUD)
+[![Paypal-shield]](https://www.paypal.com/donate/?business=UZ6F4WY9P5MFY&no_recurring=0&item_name=Please+donate+if+you+like+my+work.&currency_code=AUD)
 
 A fork of Adventurer 3 integration adjusted for the FlashForge Adventurer 4 printer.
 
