@@ -4,9 +4,10 @@ A fork of Adventurer 3 integration adjusted for the FlashForge Adventurer 4 prin
 
 It adds three entities:
 
-- state, together with nozzle and bed temperatures available as attributes
+- state, together with nozzle, bed temperatures and layers (being printed and total number) available as attributes
 - current print job's progress
 - camera feed
+<img src="https://raw.githubusercontent.com/darek-margas/hass-flashforge-adventurer-4/master/Adventurer-example-1.PNG" alt="Example" width="800"/>
 
 ## Installation
 
@@ -19,7 +20,4 @@ IP address of the printer. It might be a good idea to assign it a static IP
 address in your router settings.
 
 ## Printer compatibility
-
-I noticed that my Adventurer 4 provides layers in addition to progress in percent.
-Modified it to collect this information and also to match regex to fix missing progress in original integration.
-
+Works with Adventurer 4 and possibly nothing else as Adventurer 4 provides layers which are a must to match regex.
