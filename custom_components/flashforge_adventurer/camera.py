@@ -6,7 +6,7 @@ from homeassistant.components.mjpeg.camera import MjpegCamera
 
 from .const import DOMAIN
 from .sensor import (
-    FlashforgeAdventurer3CommonPropertiesMixin,
+    FlashforgeAdventurer4CommonPropertiesMixin,
     PrinterDefinition,
 )
 
@@ -29,7 +29,7 @@ async def async_setup_entry(
     async_add_entities(sensors, update_before_add=True)
 
 
-class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, MjpegCamera):
+class FlashforgeAdventurer4Camera(FlashforgeAdventurer4CommonPropertiesMixin, MjpegCamera):
     def __init__(self, printer_definition: PrinterDefinition) -> None:
         self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
