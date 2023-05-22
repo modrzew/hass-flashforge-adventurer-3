@@ -1,5 +1,5 @@
 # FlashForge Adventurer 4 for Home Assistant
-[![Paypal-shield]](https://www.paypal.com/donate/?business=UZ6F4WY9P5MFY&no_recurring=0&item_name=Please+donate+if+you+like+my+work.&currency_code=AUD)
+[![Paypa-shiel]](https://www.paypal.com/donate/?business=UZ6F4WY9P5MFY&no_recurring=0&item_name=Please+donate+if+you+like+my+work.&currency_code=AUD)
 
 A fork of Adventurer 3 integration adjusted for the FlashForge Adventurer 4 printer.
 
@@ -22,3 +22,5 @@ address in your router settings.
 
 ## Printer compatibility
 Works with Adventurer 4 and possibly nothing else as Adventurer 4 provides layers which are a must to match regex.
+
+[Paypal-shield]: https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square&colorA=273133&colorB=b008bb "Paypal"
