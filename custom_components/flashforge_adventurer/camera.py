@@ -24,7 +24,7 @@ async def async_setup_entry(
     if config_entry.options:
         config.update(config_entry.options)
     sensors = [
-        FlashforgeAdventurer3Camera(config),
+        FlashforgeAdventurer4Camera(config),
     ]
     async_add_entities(sensors, update_before_add=True)
 
