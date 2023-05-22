@@ -1,7 +1,7 @@
 {
   "domain": "flashforge_adventurer_4",
   "name": "FlashForge Adventurer 4",
-  "codeowners": ["@darek-margas"],
+  "codeowners": ["@modrzew","@darek-margas"],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/darek-margas/hass-flashforge-adventurer-4/",
