@@ -39,16 +39,16 @@ async def async_setup_entry(
     config = hass.data[DOMAIN][config_entry.entry_id]
     if config_entry.options:
         config.update(config_entry.options)
-    coordinator = FlashforgeAdventurer3Coordinator(hass, config)
+    coordinator = FlashforgeAdventurer4Coordinator(hass, config)
     await coordinator.async_config_entry_first_refresh()
     sensors = [
-        FlashforgeAdventurer3StateSensor(coordinator, config),
-        FlashforgeAdventurer3ProgressSensor(coordinator, config),
+        FlashforgeAdventurer4StateSensor(coordinator, config),
+        FlashforgeAdventurer4ProgressSensor(coordinator, config),
     ]
     async_add_entities(sensors, update_before_add=True)
 
 
-class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
+class FlashforgeAdventurer4Coordinator(DataUpdateCoordinator):
     def __init__(self, hass, printer_definition: PrinterDefinition):
         super().__init__(
             hass,
@@ -64,17 +64,17 @@ class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
             return await get_print_job_status(self.ip, self.port)
 
 
-class FlashforgeAdventurer3CommonPropertiesMixin:
+class FlashforgeAdventurer4CommonPropertiesMixin:
     @property
     def name(self) -> str:
-        return f'FlashForge Adventurer 3'
+        return f'FlashForge Adventurer 4'
 
     @property
     def unique_id(self) -> str:
-        return f'flashforge_adventurer_3_{self.ip}'
+        return f'flashforge_adventurer_4_{self.ip}'
 
 
-class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin, CoordinatorEntity, Entity):
+class BaseFlashforgeAdventurer4Sensor(FlashforgeAdventurer4CommonPropertiesMixin, CoordinatorEntity, Entity):
     def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
         super().__init__(coordinator)
         self.ip = printer_definition['ip_address']
@@ -100,7 +100,7 @@ class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin
         self.async_write_ha_state()
 
 
-class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
+class FlashforgeAdventurer4StateSensor(BaseFlashforgeAdventurer4Sensor):
     @property
     def name(self) -> str:
         return f'{super().name} state'
@@ -128,7 +128,7 @@ class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
         return 'mdi:printer-3d'
 
 
-class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
+class FlashforgeAdventurer4ProgressSensor(BaseFlashforgeAdventurer4Sensor):
     @property
     def name(self) -> str:
         return f'{super().name} progress'

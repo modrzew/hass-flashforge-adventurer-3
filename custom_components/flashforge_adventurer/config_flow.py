@@ -26,7 +26,7 @@ class GithubCustomConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self.data = user_input
                 self.data[CONF_PRINTERS] = []
                 # Return the form of the next step.
-                return self.async_create_entry(title='FlashForge Adventurer 3', data=self.data)
+                return self.async_create_entry(title='FlashForge Adventurer 4', data=self.data)
         return self.async_show_form(
             step_id="user", data_schema=CONFIG_SCHEMA, errors=errors
         )

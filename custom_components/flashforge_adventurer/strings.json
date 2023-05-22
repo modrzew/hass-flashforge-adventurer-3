@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "description": "Please enter your printer's IP address and port.",
-        "title": "FlashForge Adventurer 3 setup",
+        "title": "FlashForge Adventurer 4 setup",
         "data": {
           "ip_address": "IP Address",
           "port": "Port (default: 8899)"
