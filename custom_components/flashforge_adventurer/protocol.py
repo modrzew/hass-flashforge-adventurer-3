@@ -55,6 +55,8 @@ def parse_data(response: PrinterStatus, print_job_info: str, temperature_info: s
     print_job_info_match = STATUS_REPLY_REGEX.match(print_job_info)
     if print_job_info_match:
         response['progress'] = int(print_job_info_match.group(1))
+        response['printing_layer'] = int(print_job_info_match.group(2))
+        response['total_layers'] = int(print_job_info_match.group(3))
     temperature_match = TEMPERATURE_REPLY_REGEX.match(temperature_info)
     if temperature_match:
         # Printer is printing if desired temperatures are greater than zero. If not, it's paused.
