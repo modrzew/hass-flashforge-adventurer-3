@@ -24,7 +24,6 @@ class PrinterStatus(TypedDict):
     desired_bed_temperature: Optional[int]
     nozzle_temperature: Optional[int]
     desired_nozzle_temperature: Optional[int]
-    hex_stream: Optional[str]
     filename: Optional[str]
 
 
@@ -46,18 +45,16 @@ async def collect_data(ip: str, port: int) -> Tuple[PrinterStatus, Optional[str]
         return { 'online': False }, None, None
     response: PrinterStatus = { 'online': True }
     await send_msg(reader, writer, STATUS_COMMAND)
-    hex_stream_info = await send_msg(reader, writer, '~M119')
     print_job_info = await send_msg(reader, writer, PRINT_JOB_INFO_COMMAND)
     temperature_info = await send_msg(reader, writer, TEMPERATURE_COMMAND)
+    filename_info = await send_msg(reader, writer, '~M119')
     writer.close()
     await writer.wait_closed()
     
-    response['hex_stream'] = hex_stream_info
-
-    if 'CurrentFile:' in response['hex_stream']:
-        filename_start = response['hex_stream'].find('CurrentFile:') + len('CurrentFile: ')
-        response['filename'] = response['hex_stream'][filename_start:].strip()
-
+    if filename_info:
+        filename_match = re.search(r'CurrentFile: ([^\.]+)\.gx', filename_info)
+        if filename_match:
+            response['filename'] = filename_match.group(1)
     return response, print_job_info, temperature_info
 
 
@@ -78,12 +75,10 @@ def parse_data(response: PrinterStatus, print_job_info: str, temperature_info: s
         response['bed_temperature'] = int(temperature_match.group(3))
         response['desired_bed_temperature'] = desired_bed_temperature
     
-    response['hex_stream'] = hex_stream_info
-
-    if 'CurrentFile:' in response['hex_stream']:
-        filename_start = response['hex_stream'].find('CurrentFile:') + len('CurrentFile: ')
-        response['filename'] = response['hex_stream'][filename_start:].strip()
-
+    if filename_info:
+        filename_match = re.search(r'CurrentFile: ([^\.]+)\.gx', filename_info)
+        if filename_match:
+            response['filename'] = filename_match.group(1)
     return response
 
 
@@ -91,12 +86,10 @@ async def get_print_job_status(ip: str, port: int) -> PrinterStatus:
     response, print_job_info, temperature_info = await collect_data(ip, port)
     if not response['online']:
         
-    response['hex_stream'] = hex_stream_info
-
-    if 'CurrentFile:' in response['hex_stream']:
-        filename_start = response['hex_stream'].find('CurrentFile:') + len('CurrentFile: ')
-        response['filename'] = response['hex_stream'][filename_start:].strip()
-
+    if filename_info:
+        filename_match = re.search(r'CurrentFile: ([^\.]+)\.gx', filename_info)
+        if filename_match:
+            response['filename'] = filename_match.group(1)
     return response
     return parse_data(response, print_job_info, temperature_info)
 
