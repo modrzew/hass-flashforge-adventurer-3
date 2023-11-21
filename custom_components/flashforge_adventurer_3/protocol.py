@@ -86,11 +86,11 @@ async def get_print_job_status(ip: str, port: int) -> PrinterStatus:
     response, print_job_info, temperature_info = await collect_data(ip, port)
     if not response['online']:
         
-    if filename_info:
-        filename_match = re.search(r'CurrentFile: ([^\.]+)\.gx', filename_info)
-        if filename_match:
-            response['filename'] = filename_match.group(1)
-    return response
+        if filename_info:
+            filename_match = re.search(r'CurrentFile: ([^\.]+)\.gx', filename_info)
+            if filename_match:
+                response['filename'] = filename_match.group(1)
+        return response
     return parse_data(response, print_job_info, temperature_info)
 
 
