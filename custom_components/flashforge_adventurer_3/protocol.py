@@ -24,6 +24,8 @@ class PrinterStatus(TypedDict):
     desired_bed_temperature: Optional[int]
     nozzle_temperature: Optional[int]
     desired_nozzle_temperature: Optional[int]
+    hex_stream: Optional[str]
+    filename: Optional[str]
 
 
 async def send_msg(reader: StreamReader, writer: StreamWriter, payload: str):
@@ -44,10 +46,18 @@ async def collect_data(ip: str, port: int) -> Tuple[PrinterStatus, Optional[str]
         return { 'online': False }, None, None
     response: PrinterStatus = { 'online': True }
     await send_msg(reader, writer, STATUS_COMMAND)
+    hex_stream_info = await send_msg(reader, writer, '~M119')
     print_job_info = await send_msg(reader, writer, PRINT_JOB_INFO_COMMAND)
     temperature_info = await send_msg(reader, writer, TEMPERATURE_COMMAND)
     writer.close()
     await writer.wait_closed()
+    
+    response['hex_stream'] = hex_stream_info
+
+    if 'CurrentFile:' in response['hex_stream']:
+        filename_start = response['hex_stream'].find('CurrentFile:') + len('CurrentFile: ')
+        response['filename'] = response['hex_stream'][filename_start:].strip()
+
     return response, print_job_info, temperature_info
 
 
@@ -67,13 +77,27 @@ def parse_data(response: PrinterStatus, print_job_info: str, temperature_info: s
         response['desired_nozzle_temperature'] = desired_nozzle_temperature
         response['bed_temperature'] = int(temperature_match.group(3))
         response['desired_bed_temperature'] = desired_bed_temperature
+    
+    response['hex_stream'] = hex_stream_info
+
+    if 'CurrentFile:' in response['hex_stream']:
+        filename_start = response['hex_stream'].find('CurrentFile:') + len('CurrentFile: ')
+        response['filename'] = response['hex_stream'][filename_start:].strip()
+
     return response
 
 
 async def get_print_job_status(ip: str, port: int) -> PrinterStatus:
     response, print_job_info, temperature_info = await collect_data(ip, port)
     if not response['online']:
-        return response
+        
+    response['hex_stream'] = hex_stream_info
+
+    if 'CurrentFile:' in response['hex_stream']:
+        filename_start = response['hex_stream'].find('CurrentFile:') + len('CurrentFile: ')
+        response['filename'] = response['hex_stream'][filename_start:].strip()
+
+    return response
     return parse_data(response, print_job_info, temperature_info)
 
 
