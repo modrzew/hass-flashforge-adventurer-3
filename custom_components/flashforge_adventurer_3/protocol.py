@@ -103,6 +103,6 @@ async def get_print_job_status(ip: str, port: int) -> PrinterStatus:
 
 if __name__ == '__main__':
 
-    status = asyncio.run(get_print_job_status('172.22.32.196', 8899))
+    status = asyncio.run(get_print_job_status(os.environ['PRINTER_IP'], 8899))
     print(status)
     
