@@ -1,7 +1,6 @@
 import asyncio
 from codecs import StreamReader, StreamWriter
 import logging
-import os
 import re
 from typing import Optional, Tuple, TypedDict
 
@@ -9,22 +8,31 @@ logger = logging.getLogger(__name__)
 
 BUFFER_SIZE = 1024
 TIMEOUT_SECONDS = 5
-STATUS_COMMAND = '~M601 S1'
-PRINT_JOB_INFO_COMMAND = '~M27'
-TEMPERATURE_COMMAND = '~M105'
+STATUS_COMMAND = '~M119\r\n'
+PRINT_JOB_INFO_COMMAND = '~M27\r\n'
+TEMPERATURE_COMMAND = '~M105\r\n'
 
-STATUS_REPLY_REGEX = re.compile('CMD M27 Received.\r\n\w+ printing byte (\d+)/(\d+)\r\n(.*?)ok\r\n')
-TEMPERATURE_REPLY_REGEX = re.compile('CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\n(.*?)ok\r\n')
+# Regular expressions for temperature and progress
+
+TEMPERATURE_REGEX_5M_PRO = re.compile(r'T0:(\d+\.?\d*)/(\d+\.?\d*) .* B:(\d+\.?\d*)/(\d+\.?\d*)')
+PROGRESS_REGEX_5M_PRO = re.compile(r'(\d+)/(\d+)\r')
+
+TEMPERATURE_REGEX_ADVENTURER_4 = re.compile(r'CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\n(.*?)ok\r\n')
+PROGRESS_REGEX_ADVENTURER_4 = re.compile(r'CMD M27 Received.\r\nSD printing byte (\d+)/100\r\n.*? (\d+)/(\d+)\r\nok')
+
+TEMPERATURE_REGEX_ADVENTURER_3 = re.compile(r'CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\n(.*?)ok\r\n')
+PROGRESS_REGEX_ADVENTURER_3 = re.compile(r'CMD M27 Received.\r\n\w+ printing byte (\d+)/(\d+)\r\n(.*?)ok\r\n')
+
 
 class PrinterStatus(TypedDict):
+    model: str
     online: bool
     printing: Optional[bool]
     progress: Optional[int]
-    bed_temperature: Optional[int]
-    desired_bed_temperature: Optional[int]
-    nozzle_temperature: Optional[int]
-    desired_nozzle_temperature: Optional[int]
-
+    bed_temperature: Optional[float]
+    desired_bed_temperature: Optional[float]
+    nozzle_temperature: Optional[float]
+    desired_nozzle_temperature: Optional[float]
 
 async def send_msg(reader: StreamReader, writer: StreamWriter, payload: str):
     msg = f'{payload}\r\n'
@@ -35,48 +43,54 @@ async def send_msg(reader: StreamReader, writer: StreamWriter, payload: str):
     logger.debug(f'Response from the printer: {result}')
     return result.decode()
 
-
-async def collect_data(ip: str, port: int) -> Tuple[PrinterStatus, Optional[str], Optional[str]]:
+async def collect_data(ip: str, port: int, model: str) -> Tuple[PrinterStatus, Optional[str], Optional[str]]:
     future = asyncio.open_connection(ip, port)
     try:
         reader, writer = await asyncio.wait_for(future, timeout=TIMEOUT_SECONDS)
     except (asyncio.TimeoutError, OSError):
-        return { 'online': False }, None, None
-    response: PrinterStatus = { 'online': True }
-    await send_msg(reader, writer, STATUS_COMMAND)
+        return {'online': False}, None, None
+    response: PrinterStatus = {'online': True}
     print_job_info = await send_msg(reader, writer, PRINT_JOB_INFO_COMMAND)
     temperature_info = await send_msg(reader, writer, TEMPERATURE_COMMAND)
     writer.close()
     await writer.wait_closed()
     return response, print_job_info, temperature_info
 
+def parse_data(model: str, print_job_info: str, temperature_info: str) -> PrinterStatus:
+    response = {'model': model, 'online': True}
+    logger.debug("Model: %s", model)
 
-def parse_data(response: PrinterStatus, print_job_info: str, temperature_info: str) -> PrinterStatus:
-    print_job_info_match = STATUS_REPLY_REGEX.match(print_job_info)
-    if print_job_info_match:
-        current = int(print_job_info_match.group(1))
-        total = int(print_job_info_match.group(2))
-        response['progress'] = int(current / total * 100)
-    temperature_match = TEMPERATURE_REPLY_REGEX.match(temperature_info)
-    if temperature_match:
-        # Printer is printing if desired temperatures are greater than zero. If not, it's paused.
-        desired_nozzle_temperature = int(temperature_match.group(2))
-        desired_bed_temperature = int(temperature_match.group(4))
-        response['printing'] = bool(desired_nozzle_temperature and desired_bed_temperature)
-        response['nozzle_temperature'] = int(temperature_match.group(1))
-        response['desired_nozzle_temperature'] = desired_nozzle_temperature
-        response['bed_temperature'] = int(temperature_match.group(3))
-        response['desired_bed_temperature'] = desired_bed_temperature
+    if model in ['FlashForge Adventurer 5M Pro', 'FlashForge Adventurer 5M']:
+        temp_match = TEMPERATURE_REGEX_5M_PRO.search(temperature_info)
+        progress_match = PROGRESS_REGEX_5M_PRO.search(print_job_info)
+    elif model == 'FlashForge Adventurer 4':
+        temp_match = TEMPERATURE_REGEX_ADVENTURER_4.search(temperature_info)
+        progress_match = PROGRESS_REGEX_ADVENTURER_4.search(print_job_info)
+    else:  # Adventurer 3
+        temp_match = TEMPERATURE_REGEX_ADVENTURER_3.search(temperature_info)
+        progress_match = PROGRESS_REGEX_ADVENTURER_3.search(print_job_info)
+
+    if temp_match:
+        response['nozzle_temperature'] = float(temp_match.group(1))
+        response['desired_nozzle_temperature'] = float(temp_match.group(2))
+        response['bed_temperature'] = float(temp_match.group(3))
+        response['desired_bed_temperature'] = float(temp_match.group(4))
+
+    if progress_match:
+        current = int(progress_match.group(1))
+        total = int(progress_match.group(2))
+        response['progress'] = int(current / total * 100) if total > 0 else 0
+
     return response
 
 
-async def get_print_job_status(ip: str, port: int) -> PrinterStatus:
-    response, print_job_info, temperature_info = await collect_data(ip, port)
-    if not response['online']:
-        return response
-    return parse_data(response, print_job_info, temperature_info)
-
+async def get_print_job_status(ip: str, port: int, model: str) -> PrinterStatus:
+    response, print_job_info, temperature_info = await collect_data(ip, port, model)
+    if response['online']:
+        return parse_data(model, print_job_info, temperature_info)
+    return response
 
 if __name__ == '__main__':
-    status = asyncio.run(get_print_job_status(os.environ['PRINTER_IP'], 8899))
+    model = 'FlashForge Adventurer 5M Pro'  # Or 'FlashForge Adventurer 5M', 'FlashForge Adventurer 4', 'FlashForge Adventurer 3'
+    status = asyncio.run(get_print_job_status(os.environ['PRINTER_IP'], 8899, model))
     print(status)
