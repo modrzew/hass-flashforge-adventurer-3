@@ -3,16 +3,14 @@ from typing import Callable
 
 from homeassistant import config_entries, core
 from homeassistant.components.mjpeg.camera import MjpegCamera
-
-from .const import DOMAIN
+from .const import CONF_PRINTERS, DEFAULT_PORT, DOMAIN, CONF_MODEL, AVAILABLE_MODELS
 from .sensor import (
-    FlashforgeAdventurer3CommonPropertiesMixin,
+    FlashForgeAdventurer3CommonPropertiesMixin,
     PrinterDefinition,
 )
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
-
 
 async def async_setup_entry(
     hass: core.HomeAssistant,
@@ -29,11 +27,13 @@ async def async_setup_entry(
     async_add_entities(sensors, update_before_add=True)
 
 
-class FlashforgeAdventurer3Camera(FlashforgeAdventurer3CommonPropertiesMixin, MjpegCamera):
+class FlashforgeAdventurer3Camera(FlashForgeAdventurer3CommonPropertiesMixin, MjpegCamera):
     def __init__(self, printer_definition: PrinterDefinition) -> None:
         self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
+        self.model = printer_definition.get(CONF_MODEL)  
         super().__init__(name=self.name, mjpeg_url=self.stream_url, still_image_url=None)
+
 
     @property
     def name(self) -> str:
