@@ -44,6 +44,7 @@ async def async_setup_entry(
     sensors = [
         FlashforgeAdventurer3StateSensor(coordinator, config),
         FlashforgeAdventurer3ProgressSensor(coordinator, config),
+        FlashforgeAdventurer3FilenameSensor(coordinator, config),
     ]
     async_add_entities(sensors, update_before_add=True)
 
@@ -152,3 +153,24 @@ class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def unit_of_measurement(self) -> str:
         return '%'
+
+class FlashforgeAdventurer3FilenameSensor(BaseFlashforgeAdventurer3Sensor):
+    @property
+    def name(self) -> str:
+        return f'{super().name} filename'
+
+    @property
+    def unique_id(self) -> str:
+        return f'{super().unique_id}_filename'
+
+    @property
+    def available(self) -> bool:
+        return bool(self.attrs.get('online') and self.attrs.get('filename'))
+
+    @property
+    def state(self) -> Optional[str]:
+        return self.attrs.get('filename')
+
+    @property
+    def icon(self) -> str:
+        return 'mdi:file'
