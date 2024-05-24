@@ -1,13 +1,12 @@
 {
-  "domain": "FlashForge_adventurer_3",
+  "domain": "flashforge_adventurer_3",
   "name": "FlashForge Adventurer 3",
   "codeowners": ["@modrzew"],
-  "contributors": ["@f00d4tehg0dz"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/modrzew/hass-FlashForge-adventurer-3/",
-  "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/modrzew/hass-FlashForge-adventurer-3/issues",
+  "documentation": "https://github.com/modrzew/hass-flashforge-adventurer-3/",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/modrzew/hass-flashforge-adventurer-3/issues",
   "requirements": [],
   "version": "1.0.0"
 }

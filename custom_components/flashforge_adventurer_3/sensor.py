@@ -14,7 +14,10 @@ from homeassistant.helpers.update_coordinator import (
 )
 import voluptuous as vol
 
-from .const import CONF_PRINTERS, DEFAULT_PORT, DOMAIN, CONF_MODEL, AVAILABLE_MODELS
+from .const import (
+    DOMAIN, MODEL_MAP, PrinterModel
+)
+
 from .protocol import get_print_job_status
 
 LOGGER = logging.getLogger(__name__)
@@ -23,14 +26,16 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required('ip_address'): cv.string,
         vol.Required('port'): cv.string,
-        vol.Required(CONF_MODEL): cv.string,
+        vol.Required('model'): vol.In(list(MODEL_MAP.keys())),
     }
 )
 
+
 class PrinterDefinition(TypedDict):
-    model: str
+    model: PrinterModel
     ip: str
     port: int
+
 
 async def async_setup_entry(
     hass: core.HomeAssistant, 
@@ -39,65 +44,67 @@ async def async_setup_entry(
 ) -> bool:
 
     logger = logging.getLogger(__name__)
-    logger.info("Setting up sensor platform for entry %s", config_entry.entry_id)
+    logger.debug("Setting up sensor platform for entry %s", config_entry.entry_id)
     
     config = hass.data[DOMAIN][config_entry.entry_id]
 
     logger.debug("Config: %s", config)
     
-    coordinator = FlashForgeAdventurer3Coordinator(hass, config)
-    logger.info("Coordinator created")
+    coordinator = FlashforgeAdventurer3Coordinator(hass, config)
+    logger.debug("Coordinator created")
     
     await coordinator.async_config_entry_first_refresh()
-    logger.info("First refresh of coordinator done")
+    logger.debug("First refresh of coordinator done")
 
     sensors = [
-        FlashForgeAdventurer3StateSensor(coordinator, config),
-        FlashForgeAdventurer3ProgressSensor(coordinator, config),
-        FlashForgeAdventurer5TemperatureSensor (coordinator, config),
+        FlashforgeAdventurer3StateSensor(coordinator, config),
+        FlashforgeAdventurer3ProgressSensor(coordinator, config),
     ]
 
     logger.debug("Sensors list: %s", sensors)
     
     async_add_entities(sensors, update_before_add=True)
-    logger.info("Added sensor entities")
+    logger.debug("Added sensor entities")
 
 
-class FlashForgeAdventurer3Coordinator(DataUpdateCoordinator):
+class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
     def __init__(self, hass, printer_definition: PrinterDefinition):
         super().__init__(
             hass,
             LOGGER,
-            name='My sensor',
+            name='Flashforge Adventurer 3 Coordinator',
             update_interval=timedelta(seconds=60),
         )
-        self.ip = printer_definition.get('ip_address', 'Unknown IP')  # Set a default IP if not provided
-        self.port = printer_definition.get('port', 8899)  # Set a default port if not provided
-        self.model = printer_definition.get(CONF_MODEL, 'FlashForge Adventurer 3')
-
+        LOGGER.debug("Printer definition: %s", printer_definition)
+        self.ip = printer_definition.get('ip_address')
+        self.port = printer_definition.get('port', 8899)
+        model_str = printer_definition['model']
+        self.model = PrinterModel(model_str)
 
     async def _async_update_data(self):
         async with async_timeout.timeout(5):
             return await get_print_job_status(self.ip, self.port, self.model)
 
-class FlashForgeAdventurer3CommonPropertiesMixin:
+
+class FlashforgeAdventurer3CommonPropertiesMixin:
     @property
     def name(self) -> str:
-        return f'{self.model}'
+        return MODEL_MAP.get(self.model.value)
 
     @property
     def unique_id(self) -> str:
-        return f'{self.model.lower().replace(" ", "_")}_{self.ip}'
+        return f'{self.model.value}_{self.ip}'
 
-class BaseFlashForgeAdventurer3Sensor(FlashForgeAdventurer3CommonPropertiesMixin, CoordinatorEntity, Entity):
+
+class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin, CoordinatorEntity, Entity):
     def __init__(self, coordinator: DataUpdateCoordinator, printer_definition: PrinterDefinition) -> None:
         super().__init__(coordinator)
-        self.ip = printer_definition['ip_address']  # Use 'ip_address' instead of 'ip'
+        self.ip = printer_definition['ip_address']
         self.port = printer_definition['port']
-        self.model = printer_definition.get(CONF_MODEL, 'FlashForge Adventurer 3')
+        model_str = printer_definition['model']
+        self.model = PrinterModel(model_str)
         self._available = False
         self.attrs = {}
-
 
     @property
     def state(self) -> Optional[str]:
@@ -117,7 +124,7 @@ class BaseFlashForgeAdventurer3Sensor(FlashForgeAdventurer3CommonPropertiesMixin
         self.async_write_ha_state()
 
 
-class FlashForgeAdventurer3StateSensor(BaseFlashForgeAdventurer3Sensor):
+class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def name(self) -> str:
         return f'{super().name} state'
@@ -145,7 +152,7 @@ class FlashForgeAdventurer3StateSensor(BaseFlashForgeAdventurer3Sensor):
         return 'mdi:printer-3d'
 
 
-class FlashForgeAdventurer3ProgressSensor(BaseFlashForgeAdventurer3Sensor):
+class FlashforgeAdventurer3ProgressSensor(BaseFlashforgeAdventurer3Sensor):
     @property
     def name(self) -> str:
         return f'{super().name} progress'
@@ -169,32 +176,3 @@ class FlashForgeAdventurer3ProgressSensor(BaseFlashForgeAdventurer3Sensor):
     @property
     def unit_of_measurement(self) -> str:
         return '%'
-
-class FlashForgeAdventurer5TemperatureSensor(BaseFlashForgeAdventurer3Sensor):
-    @property
-    def name(self) -> str:
-        return f'{super().name} nozzle temperature'
-
-    @property
-    def unique_id(self) -> str:
-        return f'{super().unique_id}_nozzle_temperature'
-
-    @property
-    def state(self) -> Optional[str]:
-        return self.attrs.get('nozzle_temperature', 0)
-
-    @property
-    def icon(self) -> str:
-        return 'mdi:thermometer'
-
-    @property
-    def unit_of_measurement(self) -> str:
-        return '°C'
-
-    @property
-    def extra_state_attributes(self) -> Dict[str, Any]:
-        return {
-            "nozzle_target_temperature": self.attrs.get("desired_nozzle_temperature", 0),
-            "bed_temperature": self.attrs.get("bed_temperature", 0),
-            "bed_target_temperature": self.attrs.get("desired_bed_temperature", 0),
-        }   
