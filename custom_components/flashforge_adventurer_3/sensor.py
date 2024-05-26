@@ -73,7 +73,7 @@ class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
             hass,
             LOGGER,
             name='Flashforge Adventurer 3 Coordinator',
-            update_interval=timedelta(seconds=60),
+            update_interval=timedelta(seconds=30),
         )
         LOGGER.debug("Printer definition: %s", printer_definition)
         self.ip = printer_definition.get('ip_address')

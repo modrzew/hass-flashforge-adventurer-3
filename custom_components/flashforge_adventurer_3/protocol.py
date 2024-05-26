@@ -15,7 +15,7 @@ TEMPERATURE_COMMAND = '~M105'
 STATUS_COMMAND = '~M601 S1'
 
 TEMPERATURE_REGEX_5M = re.compile(r'T0:(\d+\.?\d*)/(\d+\.?\d*) .* B:(\d+\.?\d*)/(\d+\.?\d*)')
-STATUS_REPLY_REGEX_5M = re.compile(r'(\d+)/(\d+)\r')
+STATUS_REPLY_REGEX_5M = re.compile(r'CMD M27 Received.\r\n\w+ printing byte (\d+)/(\d+)\r\nLayer: (\d+)/(\d+)\r\nok\r\n')
 
 TEMPERATURE_REGEX_ADVENTURER = re.compile(r'CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\n(.*?)ok\r\n')
 STATUS_REPLY_REGEX_ADVENTURER = re.compile(r'CMD M27 Received.\r\n\w+ printing byte (\d+)/(\d+)\r\n(.*?)ok\r\n')
@@ -90,6 +90,11 @@ def parse_data(model: PrinterModel, print_job_info: str, temperature_info: str) 
             total = 100
             response['printing_layer'] = int(print_job_info_match.group(2))
             response['total_layers'] = int(print_job_info_match.group(3))
+        elif model in [PrinterModel.ADVENTURER_5M, PrinterModel.ADVENTURER_5M_PRO]:
+            current = int(print_job_info_match.group(1))
+            total = int(print_job_info_match.group(2))
+            response['printing_layer'] = int(print_job_info_match.group(3))
+            response['total_layers'] = int(print_job_info_match.group(4))
         else:
             current = int(print_job_info_match.group(1))
             total = int(print_job_info_match.group(2))
