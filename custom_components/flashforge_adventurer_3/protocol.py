@@ -12,12 +12,15 @@ logger = logging.getLogger(__name__)
 
 PRINT_JOB_INFO_COMMAND = '~M27'
 TEMPERATURE_COMMAND = '~M105'
+STATUS_COMMAND = '~M601 S1'
 
 TEMPERATURE_REGEX_5M = re.compile(r'T0:(\d+\.?\d*)/(\d+\.?\d*) .* B:(\d+\.?\d*)/(\d+\.?\d*)')
-PROGRESS_REGEX_5M = re.compile(r'(\d+)/(\d+)\r')
+STATUS_REPLY_REGEX_5M = re.compile(r'(\d+)/(\d+)\r')
 
 TEMPERATURE_REGEX_ADVENTURER = re.compile(r'CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\n(.*?)ok\r\n')
-PROGRESS_REGEX_ADVENTURER = re.compile(r'CMD M27 Received.\r\n\w+ printing byte (\d+)/(\d+)\r\n(.*?)ok\r\n')
+STATUS_REPLY_REGEX_ADVENTURER = re.compile(r'CMD M27 Received.\r\n\w+ printing byte (\d+)/(\d+)\r\n(.*?)ok\r\n')
+
+STATUS_REPLY_REGEX_ADVENTURER_4 = re.compile(r'CMD M27 Received.\r\n\w+ printing byte (\d+)/100\r\nLayer: (\d+)/(\d+)\r\nok\r\n')
 
 class PrinterStatus(TypedDict):
     model: PrinterModel
@@ -28,6 +31,8 @@ class PrinterStatus(TypedDict):
     desired_bed_temperature: Optional[float]
     nozzle_temperature: Optional[float]
     desired_nozzle_temperature: Optional[float]
+    printing_layer: Optional[int]
+    total_layers: Optional[int]
 
 
 async def send_msg(reader: StreamReader, writer: StreamWriter, payload: str):
@@ -47,6 +52,7 @@ async def collect_data(ip: str, port: int, model: PrinterModel) -> Tuple[Printer
     except (asyncio.TimeoutError, OSError):
         return {'model': model, 'online': False}, None, None
     response: PrinterStatus = {'model': model, 'online': True}
+    await send_msg(reader, writer, STATUS_COMMAND)
     print_job_info = await send_msg(reader, writer, PRINT_JOB_INFO_COMMAND)
     temperature_info = await send_msg(reader, writer, TEMPERATURE_COMMAND)
     writer.close()
@@ -59,15 +65,18 @@ def parse_data(model: PrinterModel, print_job_info: str, temperature_info: str) 
     logger.debug("Model: %s", model)
 
     if model in [PrinterModel.ADVENTURER_5M_PRO, PrinterModel.ADVENTURER_5M]:
-        temperature_match  = TEMPERATURE_REGEX_5M.search(temperature_info)
-        progress_match = PROGRESS_REGEX_5M.search(print_job_info)
+        temperature_match = TEMPERATURE_REGEX_5M.search(temperature_info)
+        print_job_info_match = STATUS_REPLY_REGEX_5M.search(print_job_info)
+    elif model == PrinterModel.ADVENTURER_4:
+        temperature_match = TEMPERATURE_REGEX_ADVENTURER.search(temperature_info)
+        print_job_info_match = STATUS_REPLY_REGEX_ADVENTURER_4.search(print_job_info)
     else:
-        temperature_match  = TEMPERATURE_REGEX_ADVENTURER.search(temperature_info)
-        progress_match = PROGRESS_REGEX_ADVENTURER.search(print_job_info)
+        temperature_match = TEMPERATURE_REGEX_ADVENTURER.search(temperature_info)
+        print_job_info_match = STATUS_REPLY_REGEX_ADVENTURER.search(print_job_info)
 
     if temperature_match:
         # Printer is printing if desired temperatures are greater than zero. If not, it's paused.
-        desired_nozzle_temperature = float(temperature_match.group(2)) # As int, I received this error "invalid literal for int() with base 10: '220.0'" so I casted it to float. Alternatively could try Decimal. 
+        desired_nozzle_temperature = float(temperature_match.group(2))
         desired_bed_temperature = float(temperature_match.group(4))
         response['printing'] = bool(desired_nozzle_temperature and desired_bed_temperature)
         response['nozzle_temperature'] = float(temperature_match.group(1))
@@ -75,9 +84,15 @@ def parse_data(model: PrinterModel, print_job_info: str, temperature_info: str) 
         response['bed_temperature'] = float(temperature_match.group(3))
         response['desired_bed_temperature'] = desired_bed_temperature
 
-    if progress_match:
-        current = int(progress_match.group(1))
-        total = int(progress_match.group(2))
+    if print_job_info_match:
+        if model == PrinterModel.ADVENTURER_4:
+            current = int(print_job_info_match.group(1))
+            total = 100
+            response['printing_layer'] = int(print_job_info_match.group(2))
+            response['total_layers'] = int(print_job_info_match.group(3))
+        else:
+            current = int(print_job_info_match.group(1))
+            total = int(print_job_info_match.group(2))
         response['progress'] = int(current / total * 100) if total > 0 else 0
 
     return response
