@@ -1,1 +1,4 @@
 .venv
+/.history
+/custom_components - Copy
+/custom_components/flashforge_adventurer_3/__pycache__
