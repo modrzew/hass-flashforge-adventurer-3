@@ -15,16 +15,18 @@ async def async_setup_entry(
     hass.data[DOMAIN][entry.entry_id] = hass_data
 
     # Forward the setup to the sensor and camera platforms.
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "camera"])
-    return True
+    try:
+      await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "camera"])
+    except (asyncio.TimeoutError, TimeoutException) as ex:
+      raise ConfigEntryNotReady(f"Timeout while loading config entry for sensor") from ex
 
+    return True
 
 async def options_update_listener(
     hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry
 ):
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)
-
 
 async def async_unload_entry(
     hass: core.HomeAssistant, entry: config_entries.ConfigEntry
