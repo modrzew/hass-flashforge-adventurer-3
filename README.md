@@ -8,7 +8,7 @@ It adds three entities:
 - state, together with nozzle, bed temperatures and layers (being printed and total number) available as attributes
 - current print job's progress
 - camera feed
-<img src="https://raw.githubusercontent.com/darek-margas/hass-flashforge-adventurer-4/master/Adventurer-example-1.PNG" alt="Example" width="800"/>
+<img src="https://raw.githubusercontent.com/darek-margas/hass-flashforge-adventurer-4/master/Adventurer-example-3.PNG" alt="Example" width="800"/>
 
 ## Installation
 
