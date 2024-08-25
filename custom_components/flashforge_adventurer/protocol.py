@@ -12,9 +12,11 @@ TIMEOUT_SECONDS = 5
 STATUS_COMMAND = '~M601 S1'
 PRINT_JOB_INFO_COMMAND = '~M27'
 TEMPERATURE_COMMAND = '~M105'
+PRINTER_INFO_COMMAND = '~M115'
 
 STATUS_REPLY_REGEX = re.compile(r'CMD M27 Received.\r\n\w+ printing byte (\d+)/100\r\nLayer: (\d+)/(\d+)\r\nok\r\n')
 TEMPERATURE_REPLY_REGEX = re.compile(r'CMD M105 Received.\r\nT0:(\d+)\W*/(\d+) B:(\d+)\W*/(\d+)\r\nok\r\n')
+PRINTER_INFO_REGEX = re.compile(r'CMD M115 Received.\r\nMachine Type:(.*?)\r\nMachine Name:(.*?)\r\nFirmware:(.*?)\r\nSN:(.*?)\r\nX:(.*?)Y:(.*?)Z:(.*?)\r\nTool Count:(.*?)\r\nMac Address:(.*?)\r\nok\r\n')
 
 class PrinterStatus(TypedDict):
     online: bool
