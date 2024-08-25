@@ -50,7 +50,7 @@ async def collect_data(ip: str, port: int) -> Tuple[PrinterStatus, Optional[str]
     try:
         reader, writer = await asyncio.wait_for(future, timeout=TIMEOUT_SECONDS)
     except (asyncio.TimeoutError, OSError):
-        return { 'online': False }, None, None
+        return { 'online': False }, None, None, None
     response: PrinterStatus = { 'online': True }
     await send_msg(reader, writer, STATUS_COMMAND)
     print_job_info = await send_msg(reader, writer, PRINT_JOB_INFO_COMMAND)
