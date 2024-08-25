@@ -1,5 +1,6 @@
 import asyncio
 from homeassistant import config_entries, core
+from homeassistant.exceptions import ConfigEntryNotReady
 from .const import DOMAIN
 
 async def async_setup_entry(
@@ -17,7 +18,7 @@ async def async_setup_entry(
     # Forward the setup to the sensor and camera platforms.
     try:
       await hass.config_entries.async_forward_entry_setups(entry, ["sensor", "camera"])
-    except (asyncio.TimeoutError, TimeoutException) as ex:
+    except asyncio.TimeoutError as ex:
       raise ConfigEntryNotReady(f"Timeout while loading config entry for sensor") from ex
 
     return True
