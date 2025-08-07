@@ -97,7 +97,7 @@ class BaseFlashforgeAdventurer3Sensor(FlashforgeAdventurer3CommonPropertiesMixin
     @callback
     def _handle_coordinator_update(self) -> None:
         self.attrs = self.coordinator.data
-        self.async_write_ha_state()
+        super()._handle_coordinator_update()
 
 
 class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
@@ -111,7 +111,7 @@ class FlashforgeAdventurer3StateSensor(BaseFlashforgeAdventurer3Sensor):
 
     @property
     def available(self) -> bool:
-        return True
+        return bool(self.attrs.get('online'))
 
     @property
     def state(self) -> Optional[str]:
