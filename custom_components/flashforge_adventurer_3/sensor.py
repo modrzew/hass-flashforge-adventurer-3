@@ -21,13 +21,14 @@ LOGGER = logging.getLogger(__name__)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required('ip'): cv.string,
+        vol.Required('ip_address'): cv.string,
         vol.Required('port'): cv.string,
     }
 )
 
+
 class PrinterDefinition(TypedDict):
-    ip: str
+    ip_address: str
     port: int
 
 
@@ -67,7 +68,7 @@ class FlashforgeAdventurer3Coordinator(DataUpdateCoordinator):
 class FlashforgeAdventurer3CommonPropertiesMixin:
     @property
     def name(self) -> str:
-        return f'FlashForge Adventurer 3'
+        return 'FlashForge Adventurer 3'
 
     @property
     def unique_id(self) -> str:
