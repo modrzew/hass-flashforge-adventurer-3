@@ -1,5 +1,11 @@
 # FlashForge Adventurer 3 for Home Assistant
 
+## ⚠️ Status: abandoned
+
+I no longer have a FlashForge Adventurer 3 and I can't continue to maintain this repo, thus it was [removed from HACS](https://github.com/hacs/default/pull/4264). While it might still work there's zero guarantees it'll continue working in the future.
+
+---
+
 A custom Home Assistant integration for the FlashForge Adventurer 3 printer.
 
 It adds three entities:
